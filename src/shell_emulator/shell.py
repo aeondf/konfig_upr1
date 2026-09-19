@@ -58,3 +58,17 @@ class Shell:
                 continue
             self.run_line(line)
         return self.exit_code
+
+    def run_script(self, path: str) -> None:
+        """Выполняет команды из файла, показывая ввод и вывод."""
+        with open(path) as file:
+            for line in file:
+                line = line.strip()
+                if line == "" or line[0] == "#":
+                    continue
+
+                print(self.prompt + line)
+                self.run_line(line)
+
+                if not self.running:
+                    break
