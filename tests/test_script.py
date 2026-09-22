@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from shell_emulator.shell import Shell
+from shell_emulator.vfs import VFS
 
 EXIT_CODE = 7
 
@@ -21,7 +22,7 @@ def test_input_and_output_are_shown(
 ) -> None:
     """Каждая команда печатается с приглашением, потом её результат."""
     path = write_script(tmp_path, 'ls -la\ncd "a b"\n')
-    Shell("myfs").run_script(path)
+    Shell(VFS("myfs")).run_script(path)
     assert capsys.readouterr().out == (
         "myfs$ ls -la\nls: ['-la']\nmyfs$ cd \"a b\"\ncd: ['a b']\n"
     )

@@ -2,14 +2,15 @@
 
 from shell_emulator.commands import COMMANDS, CommandError
 from shell_emulator.parser import ParseError, Parser
+from shell_emulator.vfs import VFS
 
 
 class Shell:
     """Состояние оболочки и диспетчер команд."""
 
-    def __init__(self, vfs_name: str = "vfs") -> None:
+    def __init__(self, vfs: VFS | None = None) -> None:
         """Создаёт оболочку с именем VFS для приглашения."""
-        self.vfs_name = vfs_name
+        self.vfs = vfs if vfs else VFS()
         self.running = True
         self.exit_code = 0
         self.parser = Parser()
@@ -17,7 +18,7 @@ class Shell:
     @property
     def prompt(self) -> str:
         """Приглашение к вводу с именем VFS."""
-        return f"{self.vfs_name}$ "
+        return f"{self.vfs.name}$ "
 
     def stop(self, code: int) -> None:
         """Останавливает цикл с заданным кодом возврата."""

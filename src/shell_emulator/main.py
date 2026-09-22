@@ -1,9 +1,12 @@
 """Запуск эмулятора."""
 
 import argparse
-from pathlib import Path
 
+from pydantic import ValidationError
+
+from shell_emulator.config import Config
 from shell_emulator.shell import Shell
+from shell_emulator.vfs import VFS
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -17,17 +20,22 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     """Запускает эмулятор с параметрами из командной строки."""
     args = parse_arguments()
-    print(f"[debug] vfs={args.vfs} script={args.script}")
-    vfs_name = Path(args.vfs).name if args.vfs else "vfs"
+    try:
+        config = Config(vfs=args.vfs, script=args.script)
+    except ValidationError as error:
+        for item in error.errors():
+            print(f"{item['loc'][0]}: {item['msg']}")
+        return 1
+    print(f"[debug] vfs={config.vfs} script={config.script}")
 
-    shell = Shell(vfs_name)
+    vfs = VFS()
+    if config.vfs:
+        vfs.load(config.vfs)
+        print("[debug] vfs tree:", *vfs.paths(), sep="\n  ")
 
-    if args.script:
-        try:
-            shell.run_script(args.script)
-        except FileNotFoundError:
-            print(f"script not found: {args.script}")
-            return 1
+    shell = Shell(vfs)
+    if config.script:
+        shell.run_script(config.script)
         if not shell.running:
             return shell.exit_code
 

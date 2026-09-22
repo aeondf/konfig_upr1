@@ -4,13 +4,14 @@ import pytest
 
 from shell_emulator.commands import CommandError
 from shell_emulator.shell import Shell
+from shell_emulator.vfs import VFS
 
 EXIT_CODE = 3
 
 
 def test_prompt() -> None:
     """Приглашение содержит имя VFS."""
-    assert Shell("rootfs").prompt == "rootfs$ "
+    assert Shell(VFS("rootfs")).prompt == "rootfs$ "
 
 
 def test_stub_returns_name_and_args() -> None:
