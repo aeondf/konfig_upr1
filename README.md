@@ -192,8 +192,10 @@ run.sh            скрипт запуска
 ```sh
 git checkout 55d74a4   # этап 1
 git checkout 626c1d2   # этап 2
+git checkout 0922590   # этап 3
 git checkout main      # вернуться к последней версии
 ```
 
 - Этап 1 (REPL) — `55d74a4`
 - Этап 2 (конфигурация) — `626c1d2`
+- Этап 3 (VFS) — `0922590`
