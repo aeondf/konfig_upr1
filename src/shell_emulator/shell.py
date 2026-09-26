@@ -17,8 +17,9 @@ class Shell:
 
     @property
     def prompt(self) -> str:
-        """Приглашение к вводу с именем VFS."""
-        return f"{self.vfs.name}$ "
+        """Приглашение к вводу с именем VFS и текущей папкой."""
+        cwd = self.vfs.path_of(self.vfs.cwd)
+        return f"{self.vfs.name}:{cwd}$ "
 
     def stop(self, code: int) -> None:
         """Останавливает цикл с заданным кодом возврата."""
