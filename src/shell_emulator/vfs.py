@@ -21,6 +21,16 @@ class Node:
     content: str = ""
 
 
+def copy_node(node: Node) -> Node:
+    """Создаёт независимую копию узла со всем содержимым."""
+    clone = Node(node.name, node.is_dir, content=node.content)
+    for child in node.children.values():
+        child_clone = copy_node(child)
+        child_clone.parent = clone
+        clone.children[child.name] = child_clone
+    return clone
+
+
 class VFS:
     """Дерево папок и файлов, загруженное с диска."""
 
@@ -60,6 +70,47 @@ class VFS:
         if child is None:
             raise VfsError(f"{path}: no such file or directory")
         return child
+
+    def resolve_parent(self, path: str) -> tuple[Node, str]:
+        """Возвращает папку-родителя и имя последнего элемента пути."""
+        clean = path.rstrip("/")
+        head, _, name = clean.rpartition("/")
+        if not name:
+            raise VfsError(f"{path}: invalid path")
+        parent = self.resolve(head) if "/" in clean else self.cwd
+        if not parent.is_dir:
+            raise VfsError(f"{path}: not a directory")
+        return parent, name
+
+    def target(self, path: str, name: str) -> tuple[Node, str]:
+        """Определяет папку и имя, под которым появится узел."""
+        try:
+            node = self.resolve(path)
+        except VfsError:
+            return self.resolve_parent(path)
+        if node.is_dir:
+            return node, name
+        return node.parent, node.name
+
+    def attach(self, node: Node, parent: Node, name: str) -> None:
+        """Помещает узел в папку под указанным именем."""
+        node.name = name
+        node.parent = parent
+        parent.children[name] = node
+
+    def detach(self, node: Node) -> None:
+        """Убирает узел из его папки."""
+        if node.parent is not None:
+            del node.parent.children[node.name]
+
+    def is_inside(self, node: Node, other: Node) -> bool:
+        """Проверяет, лежит ли узел внутри другого узла."""
+        current: Node | None = node
+        while current is not None:
+            if current is other:
+                return True
+            current = current.parent
+        return False
 
     def path_of(self, node: Node) -> str:
         """Возвращает абсолютный путь узла."""
