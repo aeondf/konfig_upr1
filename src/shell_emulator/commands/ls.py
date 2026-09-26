@@ -21,4 +21,4 @@ class LsCommand(BaseCommand):
             raise CommandError(f"ls: {error}") from None
         if not node.is_dir:
             return node.name
-        return "\n".join(node.children)
+        return "\n".join(sorted(node.children))
