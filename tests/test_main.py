@@ -28,7 +28,7 @@ def test_debug_output_and_vfs_name(
     out = capsys.readouterr().out
     assert code == EXIT_CODE
     assert f"[debug] vfs=vfs/deep script={script}" in out
-    assert f"deep$ exit {EXIT_CODE}" in out
+    assert f"deep:/$ exit {EXIT_CODE}" in out
 
 
 def test_vfs_tree_is_printed(

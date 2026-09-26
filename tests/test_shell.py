@@ -11,13 +11,12 @@ EXIT_CODE = 3
 
 def test_prompt() -> None:
     """Приглашение содержит имя VFS."""
-    assert Shell(VFS("rootfs")).prompt == "rootfs$ "
+    assert Shell(VFS("rootfs")).prompt == "rootfs:/$ "
 
 
-def test_stub_returns_name_and_args() -> None:
-    """Заглушка выводит имя команды и аргументы."""
-    assert Shell().execute('ls -la "a b"') == "ls: ['-la', 'a b']"
-    assert Shell().execute("cd") == "cd: []"
+def test_empty_vfs_has_no_files() -> None:
+    """Без загрузки VFS корень пуст."""
+    assert Shell().execute("ls") == ""
 
 
 def test_empty_line() -> None:
