@@ -2,7 +2,9 @@
 
 from pathlib import Path
 
-from shell_emulator.vfs import VFS
+import pytest
+
+from shell_emulator.vfs import VFS, VfsError
 
 MINIMAL = Path("vfs/minimal")
 FILES = Path("vfs/files")
@@ -68,3 +70,38 @@ def test_disk_is_not_modified() -> None:
     before = sorted(str(path) for path in DEEP.rglob("*"))
     VFS().load(DEEP)
     assert sorted(str(path) for path in DEEP.rglob("*")) == before
+
+
+def test_resolve_absolute_and_relative() -> None:
+    """Метод resolve понимает абсолютные и относительные пути."""
+    vfs = VFS()
+    vfs.load(DEEP)
+    assert vfs.resolve("/docs/guides").name == "guides"
+    assert vfs.resolve("docs").name == "docs"
+
+
+def test_resolve_dots() -> None:
+    """Метод resolve понимает . и .."""
+    vfs = VFS()
+    vfs.load(DEEP)
+    vfs.cwd = vfs.resolve("docs/guides")
+    assert vfs.resolve("..").name == "docs"
+    assert vfs.resolve("./linux").name == "linux"
+    assert vfs.resolve("../..") is vfs.root
+
+
+def test_resolve_missing() -> None:
+    """Несуществующий путь — VfsError."""
+    vfs = VFS()
+    vfs.load(DEEP)
+    with pytest.raises(VfsError):
+        vfs.resolve("nope")
+
+
+def test_path_of() -> None:
+    """Метод path_of строит абсолютный путь узла."""
+    vfs = VFS()
+    vfs.load(DEEP)
+    node = vfs.resolve("/docs/guides/linux/commands.txt")
+    assert vfs.path_of(node) == "/docs/guides/linux/commands.txt"
+    assert vfs.path_of(vfs.root) == "/"

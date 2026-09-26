@@ -6,6 +6,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
+class VfsError(Exception):
+    """Ошибка работы с виртуальной файловой системой."""
+
+
 @dataclass
 class Node:
     """Папка или файл в памяти."""
@@ -39,6 +43,31 @@ class VFS:
                 self._load_dir(entry, child)
             else:
                 child.content = entry.read_text(errors="replace")
+
+    def resolve(self, path: str) -> Node:
+        """Находит узел по абсолютному или относительному пути."""
+        node = self.root if path.startswith("/") else self.cwd
+        for part in path.split("/"):
+            node = self._step(node, part, path)
+        return node
+
+    def _step(self, node: Node, part: str, path: str) -> Node:
+        if part in ("", "."):
+            return node
+        if part == "..":
+            return node.parent if node.parent else node
+        child = node.children.get(part) if node.is_dir else None
+        if child is None:
+            raise VfsError(f"{path}: no such file or directory")
+        return child
+
+    def path_of(self, node: Node) -> str:
+        """Возвращает абсолютный путь узла."""
+        parts = []
+        while node.parent is not None:
+            parts.append(node.name)
+            node = node.parent
+        return "/" + "/".join(reversed(parts))
 
     def paths(self) -> list[str]:
         """Возвращает список всех путей в дереве."""
