@@ -5,28 +5,37 @@
 Программа имитирует командную строку UNIX: показывает приглашение, читает
 команду, выполняет её и печатает результат. Написана на Python.
 
-Сделаны этапы 1–3: интерактивный режим, разбор кавычек, команды `ls`,
-`cd` (пока заглушки) и `exit`, параметры запуска, стартовый скрипт
-и виртуальная файловая система в памяти.
+Сделаны этапы 1–4: интерактивный режим, разбор кавычек, параметры
+запуска, стартовый скрипт, виртуальная файловая система в памяти
+и команды `ls`, `cd`, `uptime`, `uname`, `tail`, `exit`.
 
 ## Что умеет
 
-**Приглашение** выглядит как `vfs$ ` — `vfs` это имя виртуальной файловой
-системы.
+**Приглашение** выглядит как `deep:/docs$ ` — сначала имя виртуальной
+файловой системы, потом текущая папка внутри неё.
 
 **Кавычки в аргументах.** Если аргумент содержит пробел, его можно взять
 в кавычки: `cd "my dir"`. Подходят и двойные, и одинарные.
 
 **Команды:**
 
-- `ls` и `cd` — пока просто печатают своё имя и аргументы, например
-  `ls: ['-la', 'my dir']`
-- `exit` — выход. Можно указать код: `exit 3`
+| Команда | Что делает |
+|---|---|
+| `ls [путь]` | Содержимое папки. Без аргумента — текущей. Для файла — его имя |
+| `cd [путь]` | Переход в папку. Без аргумента — в корень. Понимает `.`, `..`, абсолютные и относительные пути |
+| `uptime` | Текущее время и сколько работает эмулятор |
+| `uname [-a]` | Имя системы; с `-a` — ещё имя VFS, версия и архитектура |
+| `tail [-n N] файл` | Последние строки файла, по умолчанию 10 |
+| `exit [код]` | Выход. Можно указать код: `exit 3` |
 
 **Ошибки** — программа сообщает и продолжает работать:
 
 - неизвестная команда → `foo: command not found`
 - не закрыта кавычка → `syntax error: unterminated quote`
+- нет такого пути → `ls: nope: no such file or directory`
+- `cd` на файл → `cd: readme.md: not a directory`
+- `tail` на папку → `tail: /docs: is a directory`
+- `tail -n abc` → `tail: abc: invalid number of lines`
 - `exit abc` → `exit: abc: numeric argument required`
 
 `Ctrl+D` тоже завершает программу.
@@ -88,17 +97,18 @@ deep$
 `exit`, эмулятор завершается с его кодом; если нет — после скрипта
 начинается обычный интерактивный режим.
 
-Пример — `start_scripts/stage2.txt`:
+Пример — `start_scripts/stage4.txt`:
 
 ```
-# заглушки с аргументами
-ls -la "my dir"
-cd 'a b' c
+# просмотр содержимого и переходы
+ls
+cd docs/guides
+tail -n 3 linux/commands.txt
 
 # ошибки
-foo bar
-ls "oops
-exit 3
+cd nope
+tail /docs
+exit 0
 ```
 
 Проверочные скрипты для ОС лежат в `scripts/` — каждый запускает эмулятор
@@ -115,6 +125,9 @@ sh scripts/test_vfs_files.sh       # несколько файлов
 sh scripts/test_vfs_deep.sh        # вложенность в четыре уровня
 sh scripts/test_vfs_missing.sh     # несуществующая папка VFS
 sh scripts/test_vfs_not_dir.sh     # вместо папки указан файл
+sh scripts/test_commands_minimal.sh  # команды этапа 4 на минимальной VFS
+sh scripts/test_commands_files.sh    # то же на нескольких файлах
+sh scripts/test_commands_deep.sh     # то же на вложенной VFS
 ```
 
 ## Как запустить
@@ -131,39 +144,49 @@ uv run ruff check src tests  # проверить код линтером
 ## Пример работы
 
 ```
-$ ./run.sh --vfs /tmp/myfs --script start_scripts/stage2.txt
-[debug] vfs=/tmp/myfs script=start_scripts/stage2.txt
-myfs$ ls
-ls: []
-myfs$ ls -la "my dir"
-ls: ['-la', 'my dir']
-myfs$ cd 'a b' c
-cd: ['a b', 'c']
-myfs$ foo bar
-foo: command not found
-myfs$ ls "oops
-syntax error: unterminated quote
-myfs$ exit 3
+$ ./run.sh --vfs vfs/deep
+[debug] vfs=vfs/deep script=None
+[debug] vfs tree:
+  /docs
+  /docs/guides
+  ...
+deep:/$ ls
+docs
+readme.md
+src
+deep:/$ cd docs/guides
+deep:/docs/guides$ ls
+guide.txt
+linux
+deep:/docs/guides$ tail -n 3 linux/commands.txt
+10
+11
+12
+deep:/docs/guides$ cd ..
+deep:/docs$ uname -a
+ShellEmulator deep 0.1.0 arm64
+deep:/docs$ uptime
+15:42:07 up 00:01:12
+deep:/docs$ cd nope
+cd: nope: no such file or directory
+deep:/docs$ exit 0
+```
+
+Со стартовым скриптом команды выполняются сами, видно и ввод, и вывод:
+
+```
+$ ./run.sh --vfs vfs/deep --script start_scripts/stage4.txt
+[debug] vfs=vfs/deep script=start_scripts/stage4.txt
+...
+deep:/$ tail -n 3 /docs/guides/linux/commands.txt
+10
+11
+12
+deep:/$ tail /docs
+tail: /docs: is a directory
+deep:/$ exit 0
 $ echo $?
-3
-```
-
-Интерактивный режим:
-
-```
-$ ./run.sh
-[debug] vfs=None script=None
-vfs$ ls
-ls: []
-vfs$ ls -la "my dir"
-ls: ['-la', 'my dir']
-vfs$ cd 'a b' c
-cd: ['a b', 'c']
-vfs$ foo
-foo: command not found
-vfs$ ls "oops
-syntax error: unterminated quote
-vfs$ exit 3
+0
 ```
 
 ## Структура

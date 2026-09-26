@@ -1,0 +1,52 @@
+# Стартовый скрипт этапа 4: ls, cd, uptime, uname, tail и обработка ошибок
+
+# просмотр содержимого корня и вложенных папок
+ls
+ls /docs
+ls /docs/guides
+ls /src/shell
+
+# ls на файле показывает его имя
+ls readme.md
+
+# переходы по дереву: вниз, наверх, в корень
+cd docs
+ls
+cd guides/linux
+ls
+cd ..
+ls
+cd /
+ls
+
+# из корня выше подняться нельзя
+cd ../../..
+ls
+
+# сведения о системе и времени работы
+uname
+uname -a
+uptime
+
+# последние строки файла: по умолчанию и с указанием количества
+tail /docs/guides/linux/commands.txt
+tail -n 3 /docs/guides/linux/commands.txt
+tail /readme.md
+
+# аргументы в кавычках
+ls "docs"
+cd 'docs'
+cd /
+
+# ошибки: несуществующие пути, неверные типы, плохие аргументы
+ls nope
+cd nope
+cd readme.md
+tail nope
+tail /docs
+tail
+tail -n abc /readme.md
+foo bar
+ls "oops
+
+exit 0
