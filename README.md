@@ -5,9 +5,9 @@
 Программа имитирует командную строку UNIX: показывает приглашение, читает
 команду, выполняет её и печатает результат. Написана на Python.
 
-Сделаны этапы 1–4: интерактивный режим, разбор кавычек, параметры
+Сделаны все пять этапов: интерактивный режим, разбор кавычек, параметры
 запуска, стартовый скрипт, виртуальная файловая система в памяти
-и команды `ls`, `cd`, `uptime`, `uname`, `tail`, `exit`.
+и команды `ls`, `cd`, `uptime`, `uname`, `tail`, `cp`, `mv`, `exit`.
 
 ## Что умеет
 
@@ -26,6 +26,8 @@
 | `uptime` | Текущее время и сколько работает эмулятор |
 | `uname [-a]` | Имя системы; с `-a` — ещё имя VFS, версия и архитектура |
 | `tail [-n N] файл` | Последние строки файла, по умолчанию 10 |
+| `cp [-r] откуда куда` | Копирование. Папку — только с `-r` |
+| `mv откуда куда` | Перенос или переименование |
 | `exit [код]` | Выход. Можно указать код: `exit 3` |
 
 **Ошибки** — программа сообщает и продолжает работать:
@@ -36,6 +38,9 @@
 - `cd` на файл → `cd: readme.md: not a directory`
 - `tail` на папку → `tail: /docs: is a directory`
 - `tail -n abc` → `tail: abc: invalid number of lines`
+- `cp` папки без `-r` → `cp: docs: is a directory`
+- копирование или перенос папки внутрь себя → `cannot copy docs into itself`
+- `mv / docs` → `mv: cannot move the root directory`
 - `exit abc` → `exit: abc: numeric argument required`
 
 `Ctrl+D` тоже завершает программу.
@@ -60,6 +65,9 @@
 С параметром `--vfs` эмулятор читает указанную папку и строит её копию
 в памяти: все вложенные папки, файлы и их содержимое. Дальше все команды
 работают только с этой копией — папка на диске никогда не изменяется.
+
+Команды `cp` и `mv` меняют только эту копию в памяти: после выхода из
+эмулятора папка на диске остаётся такой же, какой была.
 
 При загрузке печатается список всех путей, чтобы было видно, что
 загрузилось:
@@ -97,17 +105,17 @@ deep$
 `exit`, эмулятор завершается с его кодом; если нет — после скрипта
 начинается обычный интерактивный режим.
 
-Пример — `start_scripts/stage4.txt`:
+Пример — `start_scripts/stage5.txt`:
 
 ```
-# просмотр содержимого и переходы
-ls
-cd docs/guides
-tail -n 3 linux/commands.txt
+# копирование и перенос
+cp readme.md copy.md
+cp -r docs docs-backup
+mv copy.md docs
 
 # ошибки
-cd nope
-tail /docs
+cp docs docs2
+mv docs docs/guides
 exit 0
 ```
 
@@ -128,6 +136,9 @@ sh scripts/test_vfs_not_dir.sh     # вместо папки указан фай
 sh scripts/test_commands_minimal.sh  # команды этапа 4 на минимальной VFS
 sh scripts/test_commands_files.sh    # то же на нескольких файлах
 sh scripts/test_commands_deep.sh     # то же на вложенной VFS
+sh scripts/test_modify_minimal.sh    # cp и mv на минимальной VFS
+sh scripts/test_modify_files.sh      # то же на нескольких файлах
+sh scripts/test_modify_deep.sh       # то же на вложенной VFS
 ```
 
 ## Как запустить
@@ -169,7 +180,14 @@ deep:/docs$ uptime
 15:42:07 up 00:01:12
 deep:/docs$ cd nope
 cd: nope: no such file or directory
-deep:/docs$ exit 0
+deep:/docs$ cd /
+deep:/$ cp -r docs docs-backup
+deep:/$ mv readme.md docs-backup
+deep:/$ ls docs-backup
+guides
+intro.txt
+readme.md
+deep:/$ exit 0
 ```
 
 Со стартовым скриптом команды выполняются сами, видно и ввод, и вывод:
@@ -216,9 +234,12 @@ run.sh            скрипт запуска
 git checkout 55d74a4   # этап 1
 git checkout 626c1d2   # этап 2
 git checkout 0922590   # этап 3
+git checkout 30a166b   # этап 4
 git checkout main      # вернуться к последней версии
 ```
 
 - Этап 1 (REPL) — `55d74a4`
 - Этап 2 (конфигурация) — `626c1d2`
 - Этап 3 (VFS) — `0922590`
+- Этап 4 (основные команды) — `30a166b`
+- Этап 5 (дополнительные команды) — последний коммит в `main`

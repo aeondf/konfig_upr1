@@ -1,0 +1,59 @@
+# Стартовый скрипт этапа 5: mv, cp и обработка ошибок
+
+ls
+
+# копирование файла под новым именем: оригинал остаётся на месте
+cp readme.md copy.md
+ls
+tail copy.md
+tail readme.md
+
+# копирование файла в папку: имя сохраняется
+cp copy.md docs
+ls docs
+
+# копирование папки со всем содержимым требует -r
+cp -r docs docs-backup
+ls
+ls docs-backup
+ls docs-backup/guides
+
+# переименование
+mv copy.md renamed.md
+ls
+
+# перенос файла в папку
+mv renamed.md docs
+ls
+ls docs
+
+# перенос папки со всем содержимым
+mv docs-backup src
+ls
+ls src
+ls /src/docs-backup/guides/linux
+
+# копия независима: изменения в ней не трогают оригинал
+mv /src/docs-backup/intro.txt /src/docs-backup/moved.txt
+ls /src/docs-backup
+ls docs
+
+# ошибки: папка без -r, копирование и перенос внутрь себя
+cp docs docs2
+cp -r docs docs/guides
+mv docs docs/guides
+
+# ошибки: источник совпадает с приёмником, корень, несуществующие пути
+cp readme.md readme.md
+mv / docs
+cp nope there
+mv nope there
+
+# ошибки: неверное число аргументов
+cp
+cp readme.md
+cp -r a b c
+mv
+mv readme.md
+
+exit 0
